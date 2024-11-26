@@ -137,7 +137,7 @@ function ApiCache() {
       try {
         redis.hset(key, 'response', JSON.stringify(value))
         redis.hset(key, 'duration', duration)
-        redis.expire(key, duration / 1000, expireCallback || function() {})
+        // redis.expire(key, duration / 1000, expireCallback || function() {})
       } catch (err) {
         debug('[apicache] error in redis.hset()')
       }
@@ -146,9 +146,9 @@ function ApiCache() {
     }
 
     // add automatic cache clearing from duration, includes max limit on setTimeout
-    timers[key] = setTimeout(function() {
-      instance.clear(key, true)
-    }, Math.min(duration, 2147483647))
+    // timers[key] = setTimeout(function() {
+    //   instance.clear(key, true)
+    // }, Math.min(duration, 2147483647))
   }
 
   function accumulateContent(res, content) {
@@ -295,6 +295,8 @@ function ApiCache() {
   }
 
   this.clear = function(target, isAutomatic) {
+    debug('Clearing is disabled.  This is a noop.')
+    return
     var group = index.groups[target]
     var redis = globalOptions.redisClient
 
@@ -727,6 +729,11 @@ function ApiCache() {
 
     if (config) {
       instance.options(config)
+    }
+
+    // require redis
+    if (!globalOptions.redisClient || !globalOptions.redisClient.connected) {
+      throw new Error('Redis is required for the Lit Fork of apicache to work.')
     }
 
     return instance

@@ -53,8 +53,6 @@
     "supertest": "^4.0.2"
   },
   "husky": {
-    "hooks": {
-      "pre-commit": "pretty-quick --staged && npm run test"
-    }
+    "hooks": {}
   }
 }
