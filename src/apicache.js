@@ -133,7 +133,7 @@ function ApiCache() {
     var redis = globalOptions.redisClient
     var expireCallback = globalOptions.events.expire
 
-    if (redis && redis.connected) {
+    if (redis && redis.isOpen && redis.isReady) {
       try {
         await redis.hSet(key, 'response', JSON.stringify(value))
         await redis.hSet(key, 'duration', duration)
@@ -440,7 +440,7 @@ function ApiCache() {
     options(localOptions)
 
     // require redis
-    if (!opt.redisClient || !opt.redisClient.connected) {
+    if (!opt.redisClient || !opt.redisClient.isOpen || !opt.redisClient.isReady) {
       throw new Error('Redis is required for the Lit Fork of apicache to work.')
     }
 
@@ -658,7 +658,7 @@ function ApiCache() {
       }
 
       // send if cache hit from redis
-      if (redis && redis.connected) {
+      if (redis && redis.isOpen && redis.isReady) {
         try {
           const obj = await redis.hGetAll(key)
           if (obj && obj.response) {
@@ -740,7 +740,11 @@ function ApiCache() {
     }
 
     // require redis
-    if (!globalOptions.redisClient || !globalOptions.redisClient.connected) {
+    if (
+      !globalOptions.redisClient ||
+      !globalOptions.redisClient.isOpen ||
+      !globalOptions.redisClient.isReady
+    ) {
       throw new Error('Redis is required for the Lit Fork of apicache to work.')
     }
 
