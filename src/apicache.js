@@ -676,6 +676,7 @@ function ApiCache() {
             )
           } else {
             perf.miss(key)
+            debug('no response found in redis, skipping cache.')
             return makeResponseCacheable(
               req,
               res,
@@ -689,10 +690,12 @@ function ApiCache() {
         } catch (err) {
           // bypass redis on error
           perf.miss(key)
+          debug('error fetching from redis, skipping cache.', err)
           return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
         }
       } else {
         perf.miss(key)
+        debug('redis not connected, skipping cache.')
         return makeResponseCacheable(req, res, next, key, duration, strDuration, middlewareToggle)
       }
     }
