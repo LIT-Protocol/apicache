@@ -142,7 +142,8 @@ function ApiCache() {
         debug('[apicache] error in redis.hset()')
       }
     } else {
-      memCache.add(key, value, duration, expireCallback)
+      // memCache.add(key, value, duration, expireCallback)
+      throw new Error('Redis is required for the Lit Fork of apicache to work.')
     }
 
     // add automatic cache clearing from duration, includes max limit on setTimeout
