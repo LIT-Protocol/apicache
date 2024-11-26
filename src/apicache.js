@@ -129,14 +129,14 @@ function ApiCache() {
     }
   }
 
-  function cacheResponse(key, value, duration) {
+  async function cacheResponse(key, value, duration) {
     var redis = globalOptions.redisClient
     var expireCallback = globalOptions.events.expire
 
     if (redis && redis.connected) {
       try {
-        redis.hset(key, 'response', JSON.stringify(value))
-        redis.hset(key, 'duration', duration)
+        await redis.hSet(key, 'response', JSON.stringify(value))
+        await redis.hSet(key, 'duration', duration)
         // redis.expire(key, duration / 1000, expireCallback || function() {})
       } catch (err) {
         debug('[apicache] error in redis.hset()')
@@ -213,7 +213,7 @@ function ApiCache() {
     }
 
     // patch res.end
-    res.end = function(content, encoding) {
+    res.end = async function(content, encoding) {
       if (shouldCacheResponse(req, res, toggle)) {
         accumulateContent(res, content)
 
@@ -226,7 +226,7 @@ function ApiCache() {
             res._apicache.content,
             encoding
           )
-          cacheResponse(key, cacheObject, duration)
+          await cacheResponse(key, cacheObject, duration)
 
           // display log entry
           var elapsed = new Date() - req.apicacheTimer
@@ -599,7 +599,7 @@ function ApiCache() {
 
     performanceArray.push(perf)
 
-    var cache = function(req, res, next) {
+    var cache = async function(req, res, next) {
       function bypass() {
         debug('bypass detected, skipping cache.')
         return next()
@@ -660,33 +660,32 @@ function ApiCache() {
       // send if cache hit from redis
       if (redis && redis.connected) {
         try {
-          redis.hgetall(key, function(err, obj) {
-            if (!err && obj && obj.response) {
-              var elapsed = new Date() - req.apicacheTimer
-              debug('sending cached (redis) version of', key, logDuration(elapsed))
+          const obj = await redis.hGetAll(key)
+          if (obj && obj.response) {
+            var elapsed = new Date() - req.apicacheTimer
+            debug('sending cached (redis) version of', key, logDuration(elapsed))
 
-              perf.hit(key)
-              return sendCachedResponse(
-                req,
-                res,
-                JSON.parse(obj.response),
-                middlewareToggle,
-                next,
-                duration
-              )
-            } else {
-              perf.miss(key)
-              return makeResponseCacheable(
-                req,
-                res,
-                next,
-                key,
-                duration,
-                strDuration,
-                middlewareToggle
-              )
-            }
-          })
+            perf.hit(key)
+            return sendCachedResponse(
+              req,
+              res,
+              JSON.parse(obj.response),
+              middlewareToggle,
+              next,
+              duration
+            )
+          } else {
+            perf.miss(key)
+            return makeResponseCacheable(
+              req,
+              res,
+              next,
+              key,
+              duration,
+              strDuration,
+              middlewareToggle
+            )
+          }
         } catch (err) {
           // bypass redis on error
           perf.miss(key)
