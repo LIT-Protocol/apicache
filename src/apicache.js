@@ -438,6 +438,11 @@ function ApiCache() {
 
     options(localOptions)
 
+    // require redis
+    if (!opt.redisClient || !opt.redisClient.connected) {
+      throw new Error('Redis is required for the Lit Fork of apicache to work.')
+    }
+
     /**
      * A Function for non tracking performance
      */
